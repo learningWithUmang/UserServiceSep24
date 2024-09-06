@@ -1,17 +1,15 @@
 package dev.umang.userservicesep24.controllers;
 
+import dev.umang.userservicesep24.dtos.*;
 import dev.umang.userservicesep24.dtos.ResponseStatus;
-import dev.umang.userservicesep24.dtos.SignupRequestDTO;
-import dev.umang.userservicesep24.dtos.SignupResponseDTO;
+import dev.umang.userservicesep24.models.Token;
 import dev.umang.userservicesep24.models.User;
 import dev.umang.userservicesep24.services.UserService;
+import lombok.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/users") // localhost:8080/users/...
@@ -53,6 +51,37 @@ public class UserController {
     }
 
 
+    @PostMapping("/login")
+    public LoginResponseDTO login(@RequestBody LoginRequestDTO loginRequestDTO){
+        Token token =  userService.login(loginRequestDTO.getEmail(), loginRequestDTO.getPassword());
 
+        LoginResponseDTO loginResponseDTO = new LoginResponseDTO();
+        loginResponseDTO.setEmail(token.getUser().getEmail());
+        loginResponseDTO.setTokenValue(token.getValue());
+        loginResponseDTO.setExpiryAt(token.getExpiryAt());
+
+        return loginResponseDTO;
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@RequestBody LogoutRequestDTO logoutRequestDTO){
+        userService.logout(logoutRequestDTO.getToken());
+
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PostMapping("/validate/{token}") //users/validate/djwsbfhjed
+    public UserDTO validateToken(@PathVariable("token") @NonNull String token){
+        return UserDTO.from(userService.validateToken(token));
+    }
 
 }
+
+/*
+token, request -> Product service
+calling user service to validate the token
+Product service has an admin page
+
+/admin/{token} -> Product service
+token is valid? should also the role of the user
+ */
