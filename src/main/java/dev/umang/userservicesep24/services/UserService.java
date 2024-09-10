@@ -1,10 +1,14 @@
 package dev.umang.userservicesep24.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.umang.userservicesep24.dtos.SendEmail;
 import dev.umang.userservicesep24.models.Token;
 import dev.umang.userservicesep24.models.User;
 import dev.umang.userservicesep24.repositories.TokenRepository;
 import dev.umang.userservicesep24.repositories.UserRepository;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -18,24 +22,48 @@ public class UserService {
     private BCryptPasswordEncoder bCryptPasswordEncoder;
     private UserRepository userRepository;
     private TokenRepository tokenRepository;
+    private KafkaTemplate<String,String> kafkaTemplate;
+    private ObjectMapper objectMapper;
 
     public UserService(BCryptPasswordEncoder bCryptPasswordEncoder,
                        UserRepository userRepository,
-                       TokenRepository tokenRepository){
+                       TokenRepository tokenRepository,
+                       KafkaTemplate kafkaTemplate,
+                       ObjectMapper objectMapper){
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
         this.userRepository = userRepository;
         this.tokenRepository = tokenRepository;
+        this.kafkaTemplate = kafkaTemplate;
+        this.objectMapper = objectMapper;
     }
 
     public User signup(String fullName,
                        String email,
-                       String password){
+                       String password) throws JsonProcessingException {
         User user = new User();
         user.setName(fullName);
         user.setEmail(email);
         user.setHashedPassword(bCryptPasswordEncoder.encode(password));
 
         userRepository.save(user);
+        /*
+        I want to publish this event to the message queue - kafka
+         */
+        SendEmail sendEmailDto = new SendEmail();
+        sendEmailDto.setTo("example_receicer@gmail.com");
+        //sendEmailDto.setFrom("umangonwork@gmail.com");
+        sendEmailDto.setSubject("Welcome To Scaler");
+        sendEmailDto.setBody("Welcome, we are very happy and excited to welcome you in the platform");
+
+
+        kafkaTemplate.send(
+                "send_Email",
+                objectMapper.writeValueAsString(sendEmailDto)
+        );
+
+        //kafka queue - [{send_Email, {"to" : "" , from : "" , "body}]
+
+
         return user;
     }
 
