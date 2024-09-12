@@ -128,4 +128,14 @@ public class UserService {
 
         return optionalToken.get().getUser();
     }
+
+    public User getUserDetails(Long userId){
+        Optional<User> optionalUser = userRepository.findById(userId);
+
+        if(optionalUser.isEmpty()){
+            throw new RuntimeException("User with userId + " + userId + " not present");
+        }
+
+        return optionalUser.get();
+    }
 }

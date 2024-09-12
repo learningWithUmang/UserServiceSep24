@@ -75,6 +75,12 @@ public class UserController {
         return UserDTO.from(userService.validateToken(token));
     }
 
+    @GetMapping("/{id}")
+    public UserDTO getUserDetails(@PathVariable("id") Long userId){
+        System.out.println("Received request");
+        return UserDTO.from(userService.getUserDetails(userId));
+    }
+
 }
 
 /*
